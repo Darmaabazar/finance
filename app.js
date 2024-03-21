@@ -7,20 +7,30 @@ var uiController = (function() {
         add__btn: ".add__btn",
         income__list: ".income__list",
         expenses__list: ".expenses__list",
-
+        budget__value: ".budget__value",
+        budget__income: ".budget__income--value",
+        budget__expenses: ".budget__expenses--value",
+        budget__expenses__percentage: ".budget__expenses--percentage"
     };
     return {
         getInput: function(){
             return {
                 type: document.querySelector(DOMStrings.add__type).value,
                 description: document.querySelector(DOMStrings.add__description).value,
-                value: document.querySelector(DOMStrings.add__value).value
+                value: parseInt(document.querySelector(DOMStrings.add__value).value)
 
             };
         },
 
         getDOM: function(){
             return DOMStrings;
+        },
+
+        showEstimate: function(est){
+            document.querySelector(DOMStrings.budget__value).textContent = est.balance;
+            document.querySelector(DOMStrings.budget__income).textContent = "+ " + est.inc;
+            document.querySelector(DOMStrings.budget__expenses).textContent = "- " + est.exp;
+            document.querySelector(DOMStrings.budget__expenses__percentage).textContent = est.percent + "%";
         },
 
         clearFiealds: function(){
@@ -70,6 +80,16 @@ var financeController = (function() {
         this.value = value;
     };
 
+    var calculateTotal = function(type) {
+        var sum = 0;
+
+        data.items[type].forEach(function(el) {
+            sum = sum + el.value;
+        });
+
+        return sum;
+    };
+
     var data = {
         items: {
             inc: [],
@@ -79,10 +99,30 @@ var financeController = (function() {
         totals: {
             inc: 0,
             exp: 0
-        }
+        },
+
+        balance: 0,
+        percent: 0
     };
 
     return {
+        calculateBudget: function() {
+            data.totals.inc = calculateTotal("inc");
+            data.totals.exp = calculateTotal("exp");
+
+            data.balance = data.totals.inc - data.totals.exp;
+            data.percent = Math.round((data.totals.exp * 100)/data.totals.inc);
+        },
+
+        getBudget: function() {
+            return {
+                balance: data.balance,
+                percent: data.percent,
+                inc: data.totals.inc,
+                exp: data.totals.exp
+            }
+        },
+
         addItem: function(type, desc, val) {
             var item, id;
 
@@ -92,9 +132,9 @@ var financeController = (function() {
             }
 
             if(type === "inc") {
-                item = new Income(id, desc, parseInt(val));
+                item = new Income(id, desc, val);
             } else {
-                item = new Expense(id, desc, parseInt(val));
+                item = new Expense(id, desc, val);
             }
 
             data.items[type].push(item);
@@ -117,6 +157,13 @@ var appController = (function(uiController, financeController) {
             uiController.addListItem(item, input.type);
 
             uiController.clearFiealds();
+            
+            financeController.calculateBudget();
+            var estimate = financeController.getBudget();
+            
+
+            uiController.showEstimate(estimate);
+            
         }
     };
 
@@ -137,6 +184,12 @@ var appController = (function(uiController, financeController) {
     return {
         init: function(){
             console.log("Application started...");
+            uiController.showEstimate({
+                balance: 0,
+                percent: 0,
+                inc: 0,
+                exp: 0
+            });
             setupEventListeners();
         }
     };
