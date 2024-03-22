@@ -10,7 +10,8 @@ var uiController = (function() {
         budget__value: ".budget__value",
         budget__income: ".budget__income--value",
         budget__expenses: ".budget__expenses--value",
-        budget__expenses__percentage: ".budget__expenses--percentage"
+        budget__expenses__percentage: ".budget__expenses--percentage",
+        container: ".container"
     };
     return {
         getInput: function(){
@@ -43,6 +44,11 @@ var uiController = (function() {
             });
 
             fieldsArr[0].focus();
+        },
+
+        deleteListItem: function(id){
+            var el =  document.getElementById(id);
+            el.parentNode.removeChild(el);
         },
 
         addListItem: function(item, type){
@@ -106,6 +112,18 @@ var financeController = (function() {
     };
 
     return {
+        deleteItem:  function(type, id) {
+            var arr = data.items[type].map(function(el) {
+                return  el.id;
+            });
+
+            var index = arr.indexOf(id);
+
+            if (index !== -1) {
+              data.items[type].splice(index, 1);
+            }
+        },    
+
         calculateBudget: function() {
             data.totals.inc = calculateTotal("inc");
             data.totals.exp = calculateTotal("exp");
@@ -126,9 +144,9 @@ var financeController = (function() {
         addItem: function(type, desc, val) {
             var item, id;
 
-            if(data.items[type].length === 0) id = 1;
+            if(data.items[type].length === 0) id = type + "-" +1;
             else {
-                id = data.items[type][data.items[type].length - 1].id + 1;
+                id = type + "-" + (data.items[type][data.items[type].length - 1].id + 1);
             }
 
             if(type === "inc") {
@@ -179,6 +197,21 @@ var appController = (function(uiController, financeController) {
                 ctrlAddItems();
             }
         });
+
+        document.querySelector(DOM.container)
+              .addEventListener('click', function(event) {
+                var id =  event.target.parentNode.parentNode.parentNode.parentNode.id;
+
+                if(id){
+                    var arr = id.split( "-" );
+                    var type = arr[0];
+                    var index = parseInt(arr[1]);
+
+                    financeController.deleteItem(type,index);
+                    uiController.deleteListItem(id);
+                }
+            });
+
     };
 
     return {
